@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arif's Personal Helper</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      color: #e5e7eb;
+    }
+
+    .container { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+
+    .header {
+      background: rgba(26, 31, 58, 0.95);
+      border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+      padding: 0.8rem;
+      display: flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-btn {
+      padding: 9px 13px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #9ca3af;
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .nav-btn.active {
+      background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+      color: #0a0e27;
+      border-color: #00d4ff;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    }
+
+    .content { flex: 1; overflow-y: auto; padding: 1.2rem; padding-bottom: 3rem; }
+
+    .section { display: none; }
+    .section.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-date { font-size: 13px; color: #6b7280; margin-bottom: 1.2rem; }
+
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 1.4rem 0 0.9rem 0;
+      color: #00d4ff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card {
+      background: rgba(26, 31, 58, 0.6);
+      border: 1px solid rgba(0, 212, 255, 0.1);
+      border-radius: 12px;
+      padding: 1.1rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .schedule-block {
+      background: rgba(26, 31, 58, 0.6);
+      border-left: 4px solid rgba(0, 212, 255, 0.5);
+      border-radius: 8px;
+      padding: 0.9rem;
+      margin-bottom: 0.8rem;
+      opacity: 0.85;
+    }
+
+    .schedule-block.done { opacity: 0.45; border-left-color: #4b5563; }
+
+    .schedule-block.current {
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.18);
+      opacity: 1;
+    }
+
+    .now-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #0a0e27;
+      background: #10b981;
+      border-radius: 4px;
+      padding: 2px 7px;
+      margin-left: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .schedule-time { font-size: 12px; color: #9ca3af; margin-bottom: 3px; }
+    .schedule-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .schedule-action { font-size: 13px; color: #d1d5db; line-height: 1.5; }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.2rem;
+    }
+
+    .stat-card {
+      background: rgba(26, 31, 58, 0.4);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 10px;
+      padding: 0.9rem;
+      text-align: center;
+    }
+
+    .stat-label { font-size: 11px; color: #9ca3af; margin-bottom: 6px; text-transform: uppercase; }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 7px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 7px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00d4ff 0%, #7c3aed 100%);
+      transition: width 0.4s ease;
+    }
+
+    .button {
+      padding: 11px 16px;
+      background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+      border: none;
+      border-radius: 8px;
+      color: #0a0e27;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    .button.secondary {
+      background: rgba(124, 58, 237, 0.25);
+      border: 1px solid rgba(124, 58, 237, 0.4);
+      color: #c4b5fd;
+    }
+
+    .button.danger {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    .input-field, .textarea-field, .select-field {
+      width: 100%;
+      padding: 10px 12px;
+      background: rgba(26, 31, 58, 0.4);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 8px;
+      color: #e5e7eb;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .input-field:focus, .textarea-field:focus, .select-field:focus {
+      outline: none;
+      border-color: rgba(0, 212, 255, 0.5);
+    }
+
+    .textarea-field { min-height: 80px; resize: vertical; }
+
+    label { font-size: 12px; color: #9ca3af; display: block; margin-bottom: 4px; }
+
+    .alert {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 1rem;
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      color: #67e8f9;
+    }
+
+    .alert.warn {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #fcd34d;
+    }
+
+    .day-box {
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .day-box.today-box { border-color: #10b981; background: rgba(16, 185, 129, 0.08); }
+
+    .day-title { font-size: 13px; font-weight: 700; color: #c4b5fd; margin-bottom: 0.7rem; }
+    .day-box.today-box .day-title { color: #6ee7b7; }
+
+    .day-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+    .di-group { display: flex; flex-direction: column; }
+    .di-label { font-size: 10px; color: #9ca3af; margin-bottom: 3px; text-transform: uppercase; }
+
+    .di-field {
+      padding: 8px;
+      background: rgba(10, 14, 39, 0.6);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 6px;
+      color: #e5e7eb;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .di-field:focus { outline: none; border-color: rgba(0, 212, 255, 0.5); }
+
+    .target-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 13px;
+    }
+    .target-row:last-child { border-bottom: none; }
+
+    .weed-log-item {
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: 8px;
+      padding: 11px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .version-tag { font-size: 11px; color: #4b5563; text-align: center; margin-top: 1.5rem; }
+
+    @media (max-width: 600px) {
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      h1 { font-size: 22px; }
+      .day-inputs { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <button class="nav-btn active" data-view="dashboard">📊 Dashboard</button>
+      <button class="nav-btn" data-view="today">📅 Today</button>
+      <button class="nav-btn" data-view="adjust">🔄 Daily Adjust</button>
+      <button class="nav-btn" data-view="weed">🌿 Weed</button>
+      <button class="nav-btn" data-view="burnout">⚠️ Burnout</button>
+      <button class="nav-btn" data-view="claude">🤖 Claude</button>
+      <button class="nav-btn" data-view="memory">📔 Memory</button>
+      <button class="nav-btn" data-view="settings">⚙️ Settings</button>
+    </div>
+
+    <div class="content">
+      <div id="dashboard" class="section active"></div>
+      <div id="today" class="section"></div>
+      <div id="adjust" class="section"></div>
+      <div id="weed" class="section"></div>
+      <div id="burnout" class="section"></div>
+      <div id="claude" class="section"></div>
+      <div id="memory" class="section"></div>
+      <div id="settings" class="section"></div>
+    </div>
+  </div>
+  <script>
+    // ============ VERSION ============
+    var APP_VERSION = 'v3.1';
+
+    // ============ CONSTANTS ============
+    var CRITERIA = {
+      prayers:   { target: 35, emoji: '\uD83E\uDD32', name: 'Prayers' },
+      trainings: { target: 3,  emoji: '\uD83D\uDCAA', name: 'Training' },
+      sleep:     { target: 49, emoji: '\uD83D\uDE34', name: 'Sleep (hrs)' },
+      weed:      { target: 1,  emoji: '\uD83C\uDF3F', name: 'Weed (max)' },
+      quran:     { target: 1,  emoji: '\uD83D\uDCD6', name: 'Quran' },
+      math:      { target: 1,  emoji: '\uD83D\uDCD0', name: 'Math Tests' }
+    };
+
+    var DAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+
+    // Schedules per day type. Times in 24h for logic, display string separate.
+    var WORK_SCHEDULE = [
+      { h: 5,  m: 30, time: '5:30 AM',  title: '\uD83E\uDD32 Wake + Fajr (5:37) + Quran', action: 'Wake up, pray Fajr, read Quran 15-30 min' },
+      { h: 6,  m: 45, time: '6:45 AM',  title: '\uD83D\uDE97 Commute to Mississauga', action: 'Leave for the shop (45min-1hr)' },
+      { h: 8,  m: 0,  time: '8:00 AM',  title: '\uD83C\uDFE2 Work Start', action: 'Work at the shop' },
+      { h: 10, m: 30, time: '10:30 AM', title: '\uD83C\uDF4E Snack Break', action: 'Snack + music' },
+      { h: 13, m: 0,  time: '1:00 PM',  title: '\uD83E\uDD32 Lunch + Dhuhr (1:19)', action: 'Eat lunch, pray Dhuhr' },
+      { h: 13, m: 30, time: '1:30 PM',  title: '\uD83C\uDFE2 Back to Work', action: 'Boredom block - push through with music' },
+      { h: 17, m: 25, time: '5:25 PM',  title: '\uD83E\uDD32 Asr Prayer', action: 'Pray Asr at the shop before leaving' },
+      { h: 17, m: 30, time: '5:30 PM',  title: '\uD83D\uDE97 Commute Home', action: 'Head back to Markham' },
+      { h: 18, m: 30, time: '6:30 PM',  title: '\uD83C\uDF7D\uFE0F Buffer + Dinner', action: 'Eat, decompress. Phone timer lock ON' },
+      { h: 20, m: 0,  time: '8:00 PM',  title: '\uD83D\uDCAA Training', action: 'Fight/Push/Pull/Legs cycle (45 min)' },
+      { h: 21, m: 2,  time: '9:02 PM',  title: '\uD83E\uDD32 Maghrib Prayer', action: 'Pray Maghrib' },
+      { h: 22, m: 0,  time: '10:00 PM', title: '\uD83E\uDDD8 Reflection + Wind-down', action: 'Reflect on day, dim lights, no screens' },
+      { h: 22, m: 53, time: '10:53 PM', title: '\uD83E\uDD32 Isha + Sleep Prep', action: 'Pray Isha, get ready for bed' },
+      { h: 23, m: 0,  time: '11:00 PM', title: '\uD83D\uDE34 Sleep', action: 'Lights out. 7+ hours' }
+    ];
+
+    var WEDNESDAY_SCHEDULE = [
+      { h: 5,  m: 37, time: '5:37 AM',  title: '\uD83E\uDD32 Fajr + Quran', action: 'Pray Fajr, read Quran' },
+      { h: 9,  m: 0,  time: '9:00 AM',  title: '\uD83C\uDFB5 Creative Block', action: 'Album work - guitar, vocals, writing (2 hrs)' },
+      { h: 11, m: 0,  time: '11:00 AM', title: '\uD83C\uDF31 Flex Time', action: 'Errands, rest, whatever you need' },
+      { h: 13, m: 19, time: '1:19 PM',  title: '\uD83E\uDD32 Dhuhr Prayer', action: 'Pray Dhuhr' },
+      { h: 17, m: 25, time: '5:25 PM',  title: '\uD83E\uDD32 Asr Prayer', action: 'Pray Asr' },
+      { h: 20, m: 0,  time: '8:00 PM',  title: '\uD83D\uDCAA Training', action: 'Continue the cycle (45 min)' },
+      { h: 21, m: 2,  time: '9:02 PM',  title: '\uD83E\uDD32 Maghrib Prayer', action: 'Pray Maghrib' },
+      { h: 22, m: 0,  time: '10:00 PM', title: '\uD83E\uDDD8 Wind-down', action: 'Reflection, dim lights' },
+      { h: 22, m: 53, time: '10:53 PM', title: '\uD83E\uDD32 Isha + Sleep', action: 'Pray Isha, bed by 11' }
+    ];
+
+    var SATURDAY_SCHEDULE = [
+      { h: 5,  m: 37, time: '5:37 AM',  title: '\uD83E\uDD32 Fajr + Quran', action: 'Pray Fajr' },
+      { h: 9,  m: 0,  time: '9:00 AM',  title: '\uD83E\uDDF9 Chores + Flex', action: 'Handle chores, errands' },
+      { h: 12, m: 0,  time: '12:00 PM', title: '\uD83D\uDCD6 Quran Class (LOCKED)', action: 'Quran class 12:00-12:30. Non-negotiable' },
+      { h: 13, m: 19, time: '1:19 PM',  title: '\uD83E\uDD32 Dhuhr Prayer', action: 'Pray Dhuhr' },
+      { h: 14, m: 0,  time: '2:00 PM',  title: '\uD83C\uDF31 Flex Time', action: 'Social, creative, rest - your call' },
+      { h: 17, m: 25, time: '5:25 PM',  title: '\uD83E\uDD32 Asr Prayer', action: 'Pray Asr' },
+      { h: 20, m: 0,  time: '8:00 PM',  title: '\uD83D\uDCAA Training', action: 'Continue the cycle (45 min)' },
+      { h: 21, m: 2,  time: '9:02 PM',  title: '\uD83E\uDD32 Maghrib Prayer', action: 'Pray Maghrib' },
+      { h: 22, m: 53, time: '10:53 PM', title: '\uD83E\uDD32 Isha + Sleep', action: 'Pray Isha, bed by 11' }
+    ];
+
+    var SUNDAY_SCHEDULE = [
+      { h: 5,  m: 37, time: '5:37 AM',  title: '\uD83E\uDD32 Fajr + Quran', action: 'Pray Fajr' },
+      { h: 9,  m: 0,  time: '9:00 AM',  title: '\uD83C\uDF31 Flex Morning', action: 'Rest, family, errands' },
+      { h: 13, m: 19, time: '1:19 PM',  title: '\uD83E\uDD32 Dhuhr Prayer', action: 'Pray Dhuhr' },
+      { h: 15, m: 0,  time: '3:00 PM',  title: '\uD83D\uDCD0 Math Test Slot', action: 'Sit one math test if not done this week (2.5 hrs)' },
+      { h: 17, m: 25, time: '5:25 PM',  title: '\uD83E\uDD32 Asr Prayer', action: 'Pray Asr' },
+      { h: 20, m: 0,  time: '8:00 PM',  title: '\uD83D\uDCAA Training (Legs)', action: 'Legs day (45 min)' },
+      { h: 21, m: 2,  time: '9:02 PM',  title: '\uD83E\uDD32 Maghrib Prayer', action: 'Pray Maghrib' },
+      { h: 21, m: 30, time: '9:30 PM',  title: '\uD83D\uDCCB Weekly Review', action: 'Open Daily Adjust, check the week, use Claude AI analysis' },
+      { h: 22, m: 53, time: '10:53 PM', title: '\uD83E\uDD32 Isha + Sleep', action: 'Pray Isha, bed by 11' }
+    ];
+
+    function getScheduleForDay(dayIndex) {
+      if (dayIndex === 0) return SUNDAY_SCHEDULE;
+      if (dayIndex === 3) return WEDNESDAY_SCHEDULE;
+      if (dayIndex === 6) return SATURDAY_SCHEDULE;
+      return WORK_SCHEDULE;
+    }
+
+    // ============ DATA (single key + migration) ============
+    var STORAGE_KEY = 'arifshelper_data_v3';
+
+    function loadData() {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) { try { return JSON.parse(saved); } catch (e) {} }
+
+      // Migrate from any older version keys
+      var oldKeys = ['arifshelper_complete', 'arifshelper_full', 'arifshelper_data', "Arif's Personal Helper_data"];
+      for (var i = 0; i < oldKeys.length; i++) {
+        var old = localStorage.getItem(oldKeys[i]);
+        if (old) {
+          try {
+            var parsed = JSON.parse(old);
+            var migrated = freshData();
+            if (parsed.weedLog) migrated.weedLog = parsed.weedLog;
+            if (parsed.burnoutLog) migrated.burnoutLog = parsed.burnoutLog;
+            if (parsed.journal) migrated.journal = parsed.journal;
+            if (parsed.claudeAnalysis) migrated.claudeAnalysis = parsed.claudeAnalysis;
+            if (parsed.preferences && parsed.preferences.apiKey) migrated.preferences.apiKey = parsed.preferences.apiKey;
+            return migrated;
+          } catch (e) {}
+        }
+      }
+      return freshData();
+    }
+
+    function freshData() {
+      return {
+        dailyData: {},
+        weedLog: [],
+        burnoutLog: [],
+        journal: [],
+        claudeAnalysis: null,
+        lastAnalysisDate: null,
+        preferences: { apiKey: '' }
+      };
+    }
+
+    var APP_DATA = loadData();
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(APP_DATA));
+    }
+
+    // ============ WEEK / DAY HELPERS ============
+    function getWeekKey() {
+      // Week starts Sunday. Key = date of that Sunday.
+      var now = new Date();
+      var sunday = new Date(now);
+      sunday.setDate(now.getDate() - now.getDay());
+      var y = sunday.getFullYear();
+      var m = ('0' + (sunday.getMonth() + 1)).slice(-2);
+      var d = ('0' + sunday.getDate()).slice(-2);
+      return y + '-' + m + '-' + d;
+    }
+
+    function getWeekData() {
+      var key = getWeekKey();
+      if (!APP_DATA.dailyData[key]) APP_DATA.dailyData[key] = {};
+      var week = APP_DATA.dailyData[key];
+      for (var i = 0; i < DAYS.length; i++) {
+        if (!week[DAYS[i]]) {
+          week[DAYS[i]] = { prayers: 0, trainings: 0, sleep: 0, weed: 0, quran: 0, math: 0 };
+        }
+      }
+      return week;
+    }
+
+    function weeklyTotals() {
+      var week = getWeekData();
+      var totals = {};
+      for (var key in CRITERIA) {
+        var sum = 0;
+        for (var i = 0; i < DAYS.length; i++) sum += (week[DAYS[i]][key] || 0);
+        totals[key] = sum;
+      }
+      return totals;
+    }
+
+    function weekStatus() {
+      var totals = weeklyTotals();
+      var status = {};
+      for (var key in CRITERIA) {
+        var current = totals[key];
+        var target = CRITERIA[key].target;
+        status[key] = {
+          current: current,
+          target: target,
+          remaining: Math.max(0, target - current),
+          percent: Math.round((current / target) * 100)
+        };
+      }
+      return status;
+    }
+
+    function daysLeftInWeek() {
+      // Includes today
+      return 7 - new Date().getDay();
+    }
+
+    // ============ DASHBOARD ============
+    function renderDashboard() {
+      var status = weekStatus();
+      var todayStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+      var html = '<h1>\u2728 Your Week</h1><div class="section-date">' + todayStr + '</div>';
+      html += '<h2>\uD83D\uDCCA Weekly Progress</h2><div class="stat-grid">';
+      for (var key in CRITERIA) {
+        var d = status[key];
+        html += '<div class="stat-card"><div class="stat-label">' + CRITERIA[key].name + '</div>' +
+          '<div class="stat-value">' + d.current + '</div>' +
+          '<div class="progress-bar"><div class="progress-fill" style="width: ' + Math.min(d.percent, 100) + '%;"></div></div>' +
+          '<div style="font-size: 11px; color: #9ca3af;">' + d.target + ' target</div></div>';
+      }
+      html += '</div>';
+
+      // Priority alerts
+      var behind = [];
+      for (var k in status) { if (status[k].remaining > 0) behind.push(k); }
+      if (behind.length > 0) {
+        html += '<h2>\u26A1 Still Needed This Week</h2><div class="card">';
+        for (var i = 0; i < behind.length; i++) {
+          var b = behind[i];
+          html += '<div class="target-row"><span>' + CRITERIA[b].emoji + ' ' + CRITERIA[b].name + '</span><span style="color:#f59e0b; font-weight:600;">' + status[b].remaining + ' more</span></div>';
+        }
+        html += '</div>';
+      } else {
+        html += '<div class="alert">\uD83C\uDF89 All weekly goals hit. Strong week.</div>';
+      }
+
+      html += '<button class="button" onclick="switchView(\'today\')">\uD83D\uDCC5 See Today\'s Schedule</button>';
+      html += '<button class="button secondary" onclick="switchView(\'adjust\')">\uD83D\uDD04 Daily Adjust</button>';
+      html += '<div class="version-tag">' + APP_VERSION + '</div>';
+
+      document.getElementById('dashboard').innerHTML = html;
+    }
+
+    // ============ TODAY ============
+    function renderToday() {
+      var now = new Date();
+      var dayIndex = now.getDay();
+      var schedule = getScheduleForDay(dayIndex);
+      var nowMin = now.getHours() * 60 + now.getMinutes();
+      var status = weekStatus();
+      var daysLeft = daysLeftInWeek();
+      var dayName = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+      var dayType = 'Work day';
+      if (dayIndex === 0) dayType = 'Recovery + weekly review';
+      else if (dayIndex === 3) dayType = 'Creative + recovery day';
+      else if (dayIndex === 6) dayType = 'Quran class + flex day';
+
+      var html = '<h1>\uD83D\uDCC5 Today</h1><div class="section-date">' + dayName + ' \u2014 ' + dayType + '</div>';
+
+      // Find current block: the latest block whose start time has passed
+      var currentIdx = -1;
+      for (var i = 0; i < schedule.length; i++) {
+        var startMin = schedule[i].h * 60 + schedule[i].m;
+        if (nowMin >= startMin) currentIdx = i;
+      }
+
+      html += '<h2>\u23F0 Your Schedule</h2>';
+      for (var j = 0; j < schedule.length; j++) {
+        var slot = schedule[j];
+        var cls = 'schedule-block';
+        var badge = '';
+        if (j < currentIdx) cls += ' done';
+        else if (j === currentIdx) { cls += ' current'; badge = '<span class="now-badge">NOW</span>'; }
+        html += '<div class="' + cls + '"><div class="schedule-time">' + slot.time + '</div>' +
+          '<div class="schedule-title">' + slot.title + badge + '</div>' +
+          '<div class="schedule-action">' + slot.action + '</div></div>';
+      }
+
+      html += '<h2>\uD83D\uDCC8 Today\'s Targets</h2><div class="card">';
+      for (var key in CRITERIA) {
+        var st = status[key];
+        var label;
+        if (key === 'weed') {
+          label = st.current >= st.target ? '<span style="color:#f59e0b;">Limit reached \u2014 none today</span>' : '<span style="color:#2ecc71;">Within limit</span>';
+        } else if (st.remaining <= 0) {
+          label = '<span style="color:#2ecc71;">Done \u2714</span>';
+        } else {
+          var perDay = Math.ceil(st.remaining / daysLeft);
+          label = '<span style="color:#f59e0b; font-weight:600;">' + perDay + ' today</span>';
+        }
+        html += '<div class="target-row"><span>' + CRITERIA[key].emoji + ' ' + CRITERIA[key].name + '</span>' + label + '</div>';
+      }
+      html += '</div>';
+      html += '<button class="button secondary" onclick="switchView(\'adjust\')">\uD83D\uDD04 Log What I Actually Did</button>';
+
+      document.getElementById('today').innerHTML = html;
+    }
+
+    // ============ DAILY ADJUST ============
+    function renderAdjust() {
+      var week = getWeekData();
+      var todayIdx = new Date().getDay();
+      var status = weekStatus();
+      var daysLeft = daysLeftInWeek();
+
+      var html = '<h1>\uD83D\uDD04 Daily Adjust</h1>' +
+        '<div class="section-date">Log each day\'s real numbers. The week recalculates instantly.</div>' +
+        '<div class="alert">Change any day below \u2014 remaining daily targets update automatically at the bottom.</div>';
+
+      for (var i = 0; i < DAYS.length; i++) {
+        var day = DAYS[i];
+        var d = week[day];
+        var tag = '';
+        var boxCls = 'day-box';
+        if (i === todayIdx) { tag = ' (TODAY)'; boxCls += ' today-box'; }
+        else if (i < todayIdx) tag = ' (past)';
+        else tag = ' (upcoming)';
+
+        var dayLabel = day.charAt(0).toUpperCase() + day.slice(1);
+        html += '<div class="' + boxCls + '"><div class="day-title">' + dayLabel + tag + '</div><div class="day-inputs">';
+        for (var key in CRITERIA) {
+          html += '<div class="di-group"><div class="di-label">' + CRITERIA[key].emoji + ' ' + CRITERIA[key].name + '</div>' +
+            '<input type="number" inputmode="numeric" class="di-field" data-day="' + day + '" data-key="' + key + '" value="' + (d[key] || 0) + '" min="0" onchange="onDailyChange(this)"></div>';
+        }
+        html += '</div></div>';
+      }
+
+      html += '<h2 id="remaining-targets">\uD83D\uDCC8 Remaining Daily Targets (' + daysLeft + ' days incl. today)</h2><div class="card" id="targets-card">';
+      html += targetsCardInner(status, daysLeft);
+      html += '</div>';
+
+      document.getElementById('adjust').innerHTML = html;
+    }
+
+    function targetsCardInner(status, daysLeft) {
+      var inner = '';
+      for (var key in CRITERIA) {
+        var st = status[key];
+        var right;
+        if (key === 'weed') {
+          right = st.current > st.target
+            ? '<span style="color:#ef4444; font-weight:600;">Over limit (' + st.current + '/' + st.target + ')</span>'
+            : '<span style="color:#2ecc71;">' + st.current + '/' + st.target + ' used</span>';
+        } else if (st.remaining <= 0) {
+          right = '<span style="color:#2ecc71;">Done \u2714</span>';
+        } else {
+          right = '<span style="color:#f59e0b; font-weight:600;">' + Math.ceil(st.remaining / daysLeft) + '/day (' + st.remaining + ' left)</span>';
+        }
+        inner += '<div class="target-row"><span>' + CRITERIA[key].emoji + ' ' + CRITERIA[key].name + '</span>' + right + '</div>';
+      }
+      return inner;
+    }
+
+    function onDailyChange(input) {
+      var day = input.getAttribute('data-day');
+      var key = input.getAttribute('data-key');
+      var val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 0) val = 0;
+      var week = getWeekData();
+      week[day][key] = val;
+      save();
+      // Update only the targets card so inputs keep focus
+      var card = document.getElementById('targets-card');
+      if (card) card.innerHTML = targetsCardInner(weekStatus(), daysLeftInWeek());
+    }
+
+    // ============ WEED LOG ============
+    function renderWeed() {
+      var weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      var thisWeek = [];
+      for (var i = 0; i < APP_DATA.weedLog.length; i++) {
+        if (new Date(APP_DATA.weedLog[i].date).getTime() >= weekAgo) thisWeek.push(APP_DATA.weedLog[i]);
+      }
+
+      var html = '<h1>\uD83C\uDF3F Weed Medical Log</h1>' +
+        '<div class="stat-grid">' +
+        '<div class="stat-card"><div class="stat-label">Uses (7 days)</div><div class="stat-value">' + thisWeek.length + '</div><div style="font-size:11px;color:#9ca3af;">Goal: max 1/week</div></div>' +
+        '</div>';
+
+      if (thisWeek.length > 1) {
+        html += '<div class="alert warn">\u26A0\uFE0F Over your weekly limit. Next use should wait until next week.</div>';
+      }
+
+      html += '<h2>\uD83D\uDCDD Log a Use</h2><div class="card">' +
+        '<label>Time</label><input type="time" class="input-field" id="weedTime" value="' + new Date().toTimeString().slice(0, 5) + '">' +
+        '<label>Mood Before: <span id="moodBeforeVal">5</span>/10</label>' +
+        '<input type="range" class="input-field" id="moodBefore" min="1" max="10" value="5" oninput="document.getElementById(\'moodBeforeVal\').textContent=this.value">' +
+        '<label>Type</label><select class="select-field" id="weedType"><option>Sativa</option><option>Indica</option><option>Hybrid</option></select>' +
+        '<label>Amount</label><select class="select-field" id="weedAmount"><option>Micro-dose</option><option>Small</option><option>Regular</option></select>' +
+        '<label>Notes (effect on focus, sleep, mood)</label><textarea class="textarea-field" id="weedNotes"></textarea>' +
+        '<button class="button secondary" onclick="logWeedUse()">Log This Use</button></div>';
+
+      html += '<h2>\uD83D\uDCCA Recent</h2>';
+      var sorted = APP_DATA.weedLog.slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 10);
+      if (sorted.length === 0) {
+        html += '<div class="card" style="font-size:13px; color:#9ca3af;">No uses logged yet.</div>';
+      }
+      for (var j = 0; j < sorted.length; j++) {
+        var log = sorted[j];
+        html += '<div class="weed-log-item"><strong>' + new Date(log.date).toLocaleDateString() + '</strong> ' + log.time +
+          ' \u2022 ' + log.type + ' \u2022 ' + log.amount + ' \u2022 Mood ' + log.moodBefore + '/10' +
+          (log.notes ? '<div style="color:#9ca3af; margin-top:4px;">"' + log.notes + '"</div>' : '') + '</div>';
+      }
+
+      document.getElementById('weed').innerHTML = html;
+    }
+
+    function logWeedUse() {
+      APP_DATA.weedLog.push({
+        date: new Date().toISOString().split('T')[0],
+        time: document.getElementById('weedTime').value,
+        moodBefore: parseInt(document.getElementById('moodBefore').value, 10),
+        type: document.getElementById('weedType').value,
+        amount: document.getElementById('weedAmount').value,
+        notes: document.getElementById('weedNotes').value
+      });
+      // Also count it in today's daily data
+      var week = getWeekData();
+      var today = DAYS[new Date().getDay()];
+      week[today].weed = (week[today].weed || 0) + 1;
+      save();
+      renderWeed();
+    }
+
+    // ============ BURNOUT ============
+    function renderBurnout() {
+      var html = '<h1>\u26A0\uFE0F Burnout Prevention</h1>' +
+        '<h2>\uD83D\uDEE1\uFE0F Protocols</h2>' +
+        '<div class="card"><strong>\uD83D\uDE34 Sleep Crash</strong><ul style="font-size:13px; color:#d1d5db; margin: 8px 0 0 20px; line-height:1.8;">' +
+        '<li>10:00pm \u2014 Splash cold water on face</li><li>10:15pm \u2014 Dim all lights</li><li>10:53pm \u2014 Isha prayer</li><li>Then \u2014 4-7-8 breathing in bed</li><li>11:00pm \u2014 Sleep</li></ul></div>' +
+        '<div class="card"><strong>\uD83E\uDEE5 Decision Paralysis</strong><ul style="font-size:13px; color:#d1d5db; margin: 8px 0 0 20px; line-height:1.8;">' +
+        '<li>Pick ONE task \u2014 the smallest one</li><li>Set a 2-minute timer</li><li>Just start. Nothing else matters</li></ul></div>' +
+        '<div class="card"><strong>\uD83D\uDD0A Sensory Overload</strong><ul style="font-size:13px; color:#d1d5db; margin: 8px 0 0 20px; line-height:1.8;">' +
+        '<li>Mute phone completely</li><li>Dim lights</li><li>Lo-fi music or silence only</li><li>15-30 min alone, no demands</li></ul></div>';
+
+      html += '<h2>\uD83D\uDCCB Log a Signal</h2><div class="card">' +
+        '<label style="display:flex; gap:10px; align-items:center; font-size:13px; color:#e5e7eb; margin-bottom:10px;"><input type="checkbox" id="sig-sleep" style="width:18px;height:18px;"> Can\'t sleep / sleep crashing</label>' +
+        '<label style="display:flex; gap:10px; align-items:center; font-size:13px; color:#e5e7eb; margin-bottom:10px;"><input type="checkbox" id="sig-paralysis" style="width:18px;height:18px;"> Decision paralysis</label>' +
+        '<label style="display:flex; gap:10px; align-items:center; font-size:13px; color:#e5e7eb;"><input type="checkbox" id="sig-sensory" style="width:18px;height:18px;"> Sensory overload</label>' +
+        '<button class="button" style="margin-top:1rem;" onclick="logBurnout()">Log Signal</button></div>';
+
+      // Recent signals
+      var recent = APP_DATA.burnoutLog.slice(-5).reverse();
+      if (recent.length > 0) {
+        html += '<h2>Recent Signals</h2>';
+        for (var i = 0; i < recent.length; i++) {
+          var r = recent[i];
+          var flags = [];
+          if (r.signals.sleep) flags.push('sleep');
+          if (r.signals.paralysis) flags.push('paralysis');
+          if (r.signals.sensory) flags.push('sensory');
+          html += '<div class="card" style="font-size:13px;">' + new Date(r.date).toLocaleString() + ' \u2014 ' + (flags.join(', ') || 'none') + '</div>';
+        }
+      }
+
+      document.getElementById('burnout').innerHTML = html;
+    }
+
+    function logBurnout() {
+      var signals = {
+        sleep: document.getElementById('sig-sleep').checked,
+        paralysis: document.getElementById('sig-paralysis').checked,
+        sensory: document.getElementById('sig-sensory').checked
+      };
+      APP_DATA.burnoutLog.push({ date: new Date().toISOString(), signals: signals });
+      save();
+      renderBurnout();
+    }
+
+    // ============ CLAUDE AI ============
+    function renderClaude() {
+      var hasApi = APP_DATA.preferences.apiKey && APP_DATA.preferences.apiKey.trim();
+      var html = '<h1>\uD83E\uDD16 Claude AI Analysis</h1>';
+
+      if (!hasApi) {
+        html += '<div class="alert warn">\u26A0\uFE0F API key not set. Add it in Settings first.</div>' +
+          '<button class="button secondary" onclick="switchView(\'settings\')">Go to Settings</button>';
+      } else {
+        html += '<div class="alert">\u2714 API configured. Best used Sunday evening for the weekly review.</div>' +
+          '<button class="button" id="claudeBtn" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: #fff;" onclick="generateClaudeAnalysis()">\uD83E\uDD16 Generate Weekly Analysis</button>';
+
+        if (APP_DATA.claudeAnalysis) {
+          html += '<div style="margin-top: 1rem; font-size: 12px; color: #9ca3af;">Last analysis: ' +
+            (APP_DATA.lastAnalysisDate ? new Date(APP_DATA.lastAnalysisDate).toLocaleString() : 'unknown') + '</div>' +
+            '<div style="background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.25); border-radius: 12px; padding: 1.3rem; margin-top: 0.8rem;">' +
+            '<div style="font-size: 13px; font-weight: 600; color: #a78bfa; margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Claude\'s Insights</div>' +
+            '<div style="font-size: 13px; line-height: 1.8; color: #d1d5db; white-space: pre-wrap;">' + escapeHtml(APP_DATA.claudeAnalysis) + '</div></div>';
+        }
+      }
+
+      document.getElementById('claude').innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    function generateClaudeAnalysis() {
+      var apiKey = APP_DATA.preferences.apiKey;
+      if (!apiKey) { alert('No API key set.'); return; }
+
+      var btn = document.getElementById('claudeBtn');
+      btn.disabled = true;
+      btn.textContent = 'Analyzing...';
+
+      var week = getWeekData();
+      var totals = weeklyTotals();
+      var weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      var weedLines = [];
+      for (var i = 0; i < APP_DATA.weedLog.length; i++) {
+        var log = APP_DATA.weedLog[i];
+        if (new Date(log.date).getTime() >= weekAgo) {
+          weedLines.push('- ' + log.date + ' ' + log.time + ': ' + log.type + ', ' + log.amount + ', mood before ' + log.moodBefore + '/10' + (log.notes ? ', notes: ' + log.notes : ''));
+        }
+      }
+      var burnoutLines = [];
+      for (var b = 0; b < APP_DATA.burnoutLog.length; b++) {
+        var bl = APP_DATA.burnoutLog[b];
+        if (new Date(bl.date).getTime() >= weekAgo) {
+          var f = [];
+          if (bl.signals.sleep) f.push('sleep');
+          if (bl.signals.paralysis) f.push('paralysis');
+          if (bl.signals.sensory) f.push('sensory');
+          burnoutLines.push('- ' + new Date(bl.date).toLocaleString() + ': ' + f.join(', '));
+        }
+      }
+
+      var dailyLines = [];
+      for (var d = 0; d < DAYS.length; d++) {
+        var dd = week[DAYS[d]];
+        dailyLines.push(DAYS[d] + ': prayers ' + dd.prayers + ', training ' + dd.trainings + ', sleep ' + dd.sleep + 'h, weed ' + dd.weed + ', quran ' + dd.quran + ', math ' + dd.math);
+      }
+
+      var prompt = 'You are analyzing weekly self-tracking data for Arif (20, ADHD/OCD/ASD, Muslim, medically supervised cannabis use, works 4 days/wk at his dad\'s truck shop, studying for math credits for university).\n\n' +
+        'WEEKLY TARGETS: prayers 35, training 3, sleep 49h, weed max 1, quran 1, math test 1.\n\n' +
+        'TOTALS THIS WEEK: prayers ' + totals.prayers + '/35, training ' + totals.trainings + '/3, sleep ' + totals.sleep + '/49h, weed ' + totals.weed + '/1, quran ' + totals.quran + '/1, math ' + totals.math + '/1.\n\n' +
+        'DAILY BREAKDOWN:\n' + dailyLines.join('\n') + '\n\n' +
+        'WEED LOG (7 days):\n' + (weedLines.join('\n') || 'None') + '\n\n' +
+        'BURNOUT SIGNALS (7 days):\n' + (burnoutLines.join('\n') || 'None') + '\n\n' +
+        'Give:\n1. PATTERNS \u2014 what the data shows\n2. RECOMMENDATIONS \u2014 what to change next week\n3. BURNOUT RISK \u2014 what to watch\n4. WINS \u2014 what worked\n\nBe specific, honest, supportive. Keep it under 400 words.';
+
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      })
+      .then(function(response) {
+        if (!response.ok) throw new Error('API error ' + response.status + ' \u2014 check your key');
+        return response.json();
+      })
+      .then(function(data) {
+        var text = '';
+        for (var i = 0; i < data.content.length; i++) {
+          if (data.content[i].type === 'text') text += data.content[i].text;
+        }
+        APP_DATA.claudeAnalysis = text;
+        APP_DATA.lastAnalysisDate = new Date().toISOString();
+        save();
+        renderClaude();
+      })
+      .catch(function(error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = '\uD83E\uDD16 Generate Weekly Analysis';
+      });
+    }
+
+    // ============ MEMORY ============
+    function renderMemory() {
+      var html = '<h1>\uD83D\uDCD4 Memory Journal</h1>' +
+        '<h2>Add Entry</h2><div class="card">' +
+        '<textarea class="textarea-field" id="memoryText" placeholder="Wins, lessons, struggles, ideas..."></textarea>' +
+        '<button class="button" onclick="addMemory()">Save Memory</button></div>' +
+        '<h2>Entries</h2>';
+
+      var entries = (APP_DATA.journal || []).slice().sort(function(a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 20);
+      if (entries.length === 0) {
+        html += '<div class="card" style="font-size:13px; color:#9ca3af;">No entries yet.</div>';
+      }
+      for (var i = 0; i < entries.length; i++) {
+        html += '<div class="card"><div style="font-size:12px; color:#9ca3af; margin-bottom:6px;">' + new Date(entries[i].date).toLocaleString() + '</div>' +
+          '<div style="font-size:13px; white-space:pre-wrap;">' + escapeHtml(entries[i].text) + '</div></div>';
+      }
+
+      document.getElementById('memory').innerHTML = html;
+    }
+
+    function addMemory() {
+      var text = document.getElementById('memoryText').value;
+      if (text.trim()) {
+        if (!APP_DATA.journal) APP_DATA.journal = [];
+        APP_DATA.journal.push({ date: new Date().toISOString(), text: text });
+        save();
+        renderMemory();
+      }
+    }
+
+    // ============ SETTINGS ============
+    function renderSettings() {
+      var html = '<h1>\u2699\uFE0F Settings</h1>' +
+        '<h2>\uD83E\uDD16 Claude API Key</h2><div class="card">' +
+        '<label>API Key (from console.anthropic.com)</label>' +
+        '<input type="password" class="input-field" id="apiKeyInput" value="' + (APP_DATA.preferences.apiKey || '') + '" placeholder="sk-ant-...">' +
+        '<div style="font-size:12px; color:#9ca3af; margin-bottom:10px;">Stored only on this device. Never shared anywhere except directly to Anthropic when you run an analysis.</div>' +
+        '<button class="button secondary" onclick="saveApiKey()">Save API Key</button></div>' +
+        '<h2>\uD83D\uDCBE Data</h2><div class="card">' +
+        '<button class="button secondary" onclick="exportData()">\uD83D\uDCE5 Export All Data (JSON)</button>' +
+        '<button class="button danger" onclick="clearData()">\uD83D\uDDD1\uFE0F Clear All Data</button></div>' +
+        '<div class="version-tag">Arif\'s Personal Helper \u2014 ' + APP_VERSION + '</div>';
+
+      document.getElementById('settings').innerHTML = html;
+    }
+
+    function saveApiKey() {
+      var key = document.getElementById('apiKeyInput').value;
+      APP_DATA.preferences.apiKey = key.trim();
+      save();
+      alert('API key saved.');
+    }
+
+    function exportData() {
+      var blob = new Blob([JSON.stringify(APP_DATA, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'arifshelper_backup_' + new Date().toISOString().split('T')[0] + '.json';
+      link.click();
+    }
+
+    function clearData() {
+      if (confirm('Clear ALL data? This cannot be undone. Export first if unsure.')) {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      }
+    }
+
+    // ============ NAVIGATION ============
+    function switchView(view) {
+      var btns = document.querySelectorAll('.nav-btn');
+      for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+      var sections = document.querySelectorAll('.section');
+      for (var j = 0; j < sections.length; j++) sections[j].classList.remove('active');
+
+      document.querySelector('[data-view="' + view + '"]').classList.add('active');
+      document.getElementById(view).classList.add('active');
+
+      if (view === 'dashboard') renderDashboard();
+      else if (view === 'today') renderToday();
+      else if (view === 'adjust') renderAdjust();
+      else if (view === 'weed') renderWeed();
+      else if (view === 'burnout') renderBurnout();
+      else if (view === 'claude') renderClaude();
+      else if (view === 'memory') renderMemory();
+      else if (view === 'settings') renderSettings();
+    }
+
+    var navBtns = document.querySelectorAll('.nav-btn');
+    for (var n = 0; n < navBtns.length; n++) {
+      (function(btn) {
+        btn.addEventListener('click', function() { switchView(btn.getAttribute('data-view')); });
+      })(navBtns[n]);
+    }
+
+    save();
+    renderDashboard();
+  </script>
+</body>
+</html>
